@@ -1,5 +1,5 @@
-# SEEDED VULNERABILITY #2: Vulnerable Base Image (python:3.8 EOL)
-FROM python:3.8
+# Hardened minimal base image
+FROM python:3.12-slim
 
 WORKDIR /app
 
