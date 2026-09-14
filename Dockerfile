@@ -3,6 +3,13 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Apply latest security patches to base OS packages
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
