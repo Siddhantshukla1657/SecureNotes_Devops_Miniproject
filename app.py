@@ -9,7 +9,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # REMEDIATION: Hardcoded secret replaced with environment variable
-API_KEY = os.environ.get("APP_SECRET_KEY", "default-dev-key")
+API_KEY = os.environ.get("APP_SECRET_KEY")
 
 notes_db = [
     {
@@ -42,9 +42,6 @@ def health():
 
 @app.route("/add", methods=["POST"])
 def add_note():
-    if not API_KEY:
-        return redirect(url_for("index"))
-
     note_text = request.form.get("note", "").strip()
 
     if not validate_note_input(note_text):
@@ -61,9 +58,6 @@ def add_note():
 
 @app.route("/delete/<string:note_id>", methods=["POST"])
 def delete_note(note_id):
-    if not API_KEY:
-        return redirect(url_for("index"))
-
     if not validate_note_input(note_id):
         return redirect(url_for("index"))
 
