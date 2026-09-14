@@ -1,15 +1,8 @@
-# Hardened minimal base image
-FROM python:3.12-slim
+# SEEDED VULNERABILITY #2: Vulnerable Base Image (python:3.8 EOL)
+FROM python:3.8
 
 WORKDIR /app
 
-# Apply latest security patches to base OS packages
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

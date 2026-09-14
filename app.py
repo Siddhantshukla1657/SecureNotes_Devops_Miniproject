@@ -8,22 +8,16 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# REMEDIATION: Hardcoded secret replaced with environment variable
-API_KEY = os.environ.get("APP_SECRET_KEY", "default-dev-key")
+# SEEDED VULNERABILITY #1: Hardcoded Secret Key (SonarCloud Finding)
+API_KEY = "sk-test-12345"
 
 notes_db = [
     {
         "id": "init-1",
-        "text": "Welcome to SecureNotes! DevSecOps pipeline active and remediated.",
+        "text": "Welcome to SecureNotes! DevSecOps pipeline active.",
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 ]
-
-
-# REMEDIATION: Extracted unified validation helper to resolve code smell
-def validate_note_input(value: str) -> bool:
-    """Validates that note input or id is non-empty."""
-    return bool(value and value.strip())
 
 
 @app.route("/", methods=["GET"])
@@ -47,7 +41,8 @@ def add_note():
 
     note_text = request.form.get("note", "").strip()
 
-    if not validate_note_input(note_text):
+    # Seeded duplicate validation logic (instance 1)
+    if not note_text or len(note_text) == 0:
         return redirect(url_for("index"))
 
     new_note = {
@@ -64,7 +59,8 @@ def delete_note(note_id):
     if not API_KEY:
         return redirect(url_for("index"))
 
-    if not validate_note_input(note_id):
+    # Seeded duplicate validation logic (instance 2)
+    if not note_id or len(note_id.strip()) == 0:
         return redirect(url_for("index"))
 
     notes_db[:] = [note for note in notes_db if note["id"] != note_id]
