@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureNotes</title>
+    <meta name="description" content="SecureNotes server-rendered application demonstrating Shift-Left security with SonarCloud, Trivy, and NVIDIA Nemotron automated remediation.">
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Custom Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Header -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <!-- Lock & Shield SVG -->
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">SecureNotes</span>
+                    <span class="brand-tagline">DevSecOps Shift-Left Demo</span>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <div class="status-pill status-pill-success">
+                    <span class="status-dot"></span>
+                    <!-- Shield Check SVG -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                        <path d="m9 12 2 2 4-4"/>
+                    </svg>
+                    <span>CI/CD Protected</span>
+                </div>
+                <span class="env-tag">v1.0-demo</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="page-container">
+        
+        <!-- Pipeline Gates Overview Card -->
+        <section class="overview-banner">
+            <div class="banner-header">
+                <div class="banner-title-group">
+                    <!-- Activity SVG -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    <h2>Automated Security Gates</h2>
+                </div>
+                <a href="/health" target="_blank" class="health-btn" title="Inspect container health status">
+                    <span>GET /health</span>
+                    <!-- External Link SVG -->
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h6v6"/>
+                        <path d="M10 14 21 3"/>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="gates-grid">
+                <div class="gate-card">
+                    <div class="gate-icon gate-icon-code">
+                        <!-- Code SVG -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                    </div>
+                    <div class="gate-info">
+                        <span class="gate-label">Code Quality Gate</span>
+                        <span class="gate-val">SonarCloud Static Scan</span>
+                    </div>
+                </div>
+
+                <div class="gate-card">
+                    <div class="gate-icon gate-icon-shield">
+                        <!-- Package / Container SVG -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m7.5 4.27 9 5.15"/>
+                            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                            <path d="m3.3 7 8.7 5 8.7-5"/>
+                            <path d="M12 22V12"/>
+                        </svg>
+                    </div>
+                    <div class="gate-info">
+                        <span class="gate-label">Image Vulnerabilities</span>
+                        <span class="gate-val">Trivy CVE Analyzer</span>
+                    </div>
+                </div>
+
+                <div class="gate-card">
+                    <div class="gate-icon gate-icon-ai">
+                        <!-- Sparkles / AI SVG -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                        </svg>
+                    </div>
+                    <div class="gate-info">
+                        <span class="gate-label">Automated Remediation</span>
+                        <span class="gate-val">NVIDIA NIM Nemotron</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Flash Message if any -->
+        {% if message %}
+        <div class="alert" role="alert">
+            <!-- Alert Circle SVG -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" x2="12" y1="8" y2="12"/>
+                <line x1="12" x2="12.01" y1="16" y2="16"/>
+            </svg>
+            <span>{{ message }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Note Creation Form Card -->
+        <section class="compose-card">
+            <form action="/add" method="POST" class="compose-form">
+                <div class="form-header">
+                    <label for="note-input" class="form-title">
+                        <!-- File Edit SVG -->
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"/>
+                            <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>
+                        </svg>
+                        <span>New Secure Note</span>
+                    </label>
+                    <span class="store-badge">In-Memory Store</span>
+                </div>
+
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        id="note-input" 
+                        name="note" 
+                        placeholder="Enter note content (e.g. Rotate container secrets every 30 days)..." 
+                        required 
+                        autocomplete="off"
+                        autofocus
+                    >
+                    <button type="submit" class="submit-btn" id="add-note-button">
+                        <!-- Plus SVG -->
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        <span>Add Note</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Active Notes Section -->
+        <section class="notes-section">
+            <div class="section-title-row">
+                <div class="section-heading">
+                    <!-- Layers SVG -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                        <polyline points="2 17 12 22 22 17"/>
+                        <polyline points="2 12 12 17 22 12"/>
+                    </svg>
+                    <h3>Active Notes</h3>
+                </div>
+                <span class="count-badge">{{ notes|length }} {% if notes|length == 1 %}entry{% else %}entries{% endif %}</span>
+            </div>
+
+            {% if notes and notes|length > 0 %}
+                <div class="notes-stack">
+                    {% for note in notes %}
+                    <article class="note-item" id="note-{{ note.id }}">
+                        <div class="note-main">
+                            <p class="note-body">{{ note.text }}</p>
+                        </div>
+                        <div class="note-footer">
+                            <div class="note-time">
+                                <!-- Clock SVG -->
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                <span>{{ note.created_at }}</span>
+                            </div>
+
+                            <div class="note-actions">
+                                <form action="/delete/{{ note.id }}" method="POST" class="delete-action-form">
+                                    <button type="submit" class="delete-btn" title="Delete note" id="delete-btn-{{ note.id }}">
+                                        <!-- Trash SVG -->
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18"/>
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                        </svg>
+                                        <span>Delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state-box">
+                    <div class="empty-illustration">
+                        <!-- Clipboard List SVG -->
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                            <path d="M12 11h4"/>
+                            <path d="M12 16h4"/>
+                            <path d="M8 11h.01"/>
+                            <path d="M8 16h.01"/>
+                        </svg>
+                    </div>
+                    <h4>No active notes</h4>
+                    <p>Enter a note in the form above to verify real-time container store functionality.</p>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-inner">
+            <div class="footer-left">
+                <span class="footer-brand">SecureNotes</span>
+                <span class="footer-desc">DevSecOps Mini-Project</span>
+            </div>
+            <div class="footer-right">
+                <span class="tech-chip">Flask</span>
+                <span class="tech-chip">Docker</span>
+                <span class="tech-chip">SonarCloud</span>
+                <span class="tech-chip">Trivy</span>
+                <span class="tech-chip">NVIDIA NIM</span>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

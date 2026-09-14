@@ -1,0 +1,188 @@
+name: SecureNotes DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      force_remediate:
+        description: 'Force run remediation agent for testing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # ============================================================================
+  # Stage 1: Static Code Quality & Security Scan (SonarCloud)
+  # ============================================================================
+  code-quality:
+    name: 🔍 Code Quality & Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Pytest Unit Tests
+        run: |
+          pytest tests/ -v
+
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ secrets.SONAR_ORG || 'siddhantshukla1657' }}
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY || 'Siddhantshukla1657_SecureNotes_Devops_Miniproject' }}
+
+      - name: SonarCloud Quality Gate Check
+        uses: sonarsource/sonarqube-quality-gate-action@v1.1.0
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ============================================================================
+  # Stage 2: Container Image Build & Trivy Vulnerability Scan
+  # ============================================================================
+  build-and-scan:
+    name: 🛡️ Container Build & CVE Scan
+    needs: [code-quality]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        run: |
+          docker build -t sample-app:latest .
+
+      - name: Run Trivy Image Scan (Structured JSON Artifact)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'sample-app:latest'
+          format: 'json'
+          output: 'trivy-results.json'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy Results Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-scan-results
+          path: trivy-results.json
+          retention-days: 7
+
+      - name: Run Trivy Quality Gate Enforcement (Exit on Vulnerability)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'sample-app:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: false
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+  # ============================================================================
+  # Stage 3: Publish to Docker Hub (Runs ONLY when both gates pass)
+  # ============================================================================
+  publish:
+    name: 🚀 Publish Validated Image
+    needs: [build-and-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/securenotes:latest
+
+  # ============================================================================
+  # Stage 4: Automated Remediation Agent (NVIDIA NIM / Nemotron)
+  # Triggered automatically on Quality Gate or Trivy failure
+  # ============================================================================
+  remediate:
+    name: 🤖 NVIDIA Nemotron Remediation Agent
+    needs: [code-quality, build-and-scan]
+    if: failure() || github.event.inputs.force_remediate == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Remediation Agent Dependencies
+        run: |
+          pip install requests python-dotenv
+
+      - name: Download Trivy Artifact (if available)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: trivy-scan-results
+          path: .
+
+      - name: Run NVIDIA Nemotron Remediation Agent
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          NVIDIA_MODEL: 'nvidia/llama-3.1-nemotron-70b-instruct'
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY || 'Siddhantshukla1657_SecureNotes_Devops_Miniproject' }}
+          SONAR_ORG: ${{ secrets.SONAR_ORG || 'siddhantshukla1657' }}
+        run: |
+          python scripts/remediate_agent.py --finding-type auto
+
+      - name: Read PR Metadata
+        id: pr_meta
+        run: |
+          echo "title=$(cat pr_title.txt)" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request (Human-in-the-Loop Review Boundary)
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "${{ steps.pr_meta.outputs.title }}"
+          branch: "agent-fix/security-remediation"
+          delete-branch: true
+          title: "${{ steps.pr_meta.outputs.title }}"
+          body-path: pr_body.md
+          labels: |
+            security
+            automated-fix
+            needs-review
