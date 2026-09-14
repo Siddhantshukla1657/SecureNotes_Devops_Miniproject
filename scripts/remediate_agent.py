@@ -291,8 +291,8 @@ Provide the fixed file content that completely resolves the finding while preser
 
 def main():
     parser = argparse.ArgumentParser(description="SecureNotes Remediation Agent (NVIDIA NIM / Nemotron)")
-    parser.add_argument("--finding-type", choices=["code", "image", "auto"], default="auto",
-                        help="Type of finding to remediate (code from SonarCloud or image from Trivy)")
+    parser.add_argument("--finding-type", choices=["code", "image", "auto", "both"], default="auto",
+                        help="Type of finding to remediate: code (SonarCloud), image (Trivy), auto, or both")
     parser.add_argument("--mock", action="store_true", help="Simulate remediation without calling NVIDIA NIM API")
     parser.add_argument("--trivy-json", default="trivy-results.json", help="Path to Trivy scan results JSON")
     args = parser.parse_args()
@@ -302,7 +302,55 @@ def main():
     sonar_project = os.environ.get("SONAR_PROJECT_KEY", "")
     sonar_org = os.environ.get("SONAR_ORG", "")
 
-    # Determine finding type
+    # -------------------------------------------------------------------------
+    # 'both' mode: remediate app.py (code) AND Dockerfile (image) in one run
+    # -------------------------------------------------------------------------
+    if args.finding_type == "both":
+        print("[Agent] Running in BOTH mode — remediating app.py (code) and Dockerfile (image).")
+        code_finding = extract_sonar_finding(sonar_project, sonar_org, sonar_token)
+        image_finding = extract_trivy_finding(args.trivy_json)
+
+        all_titles = []
+        all_explanations = []
+
+        for finding in [code_finding, image_finding]:
+            target_file = finding["file"]
+            if not Path(target_file).exists():
+                print(f"[Agent] Skipping '{target_file}' — file not found.")
+                continue
+            with open(target_file, "r", encoding="utf-8") as f:
+                original_content = f.read()
+            remediated_content, pr_title, explanation = query_nemotron(
+                finding, original_content, api_key, mock=args.mock
+            )
+            with open(target_file, "w", encoding="utf-8") as f:
+                f.write(remediated_content)
+            print(f"[Agent] Applied fix to {target_file}")
+            all_titles.append(pr_title)
+            all_explanations.append(explanation)
+
+        combined_title = "fix(security): remediate hardcoded secret + upgrade base image"
+        with open("pr_title.txt", "w", encoding="utf-8") as f:
+            f.write(combined_title)
+
+        pr_body_full = (
+            "## 🤖 Agentic Security Remediation (NVIDIA Nemotron)\n\n"
+            "Both SonarCloud and Trivy gates failed. The agent has applied fixes for both findings.\n\n"
+            + "\n\n---\n\n".join(all_explanations)
+            + "\n\n---\n"
+            "🛡️ *Human-in-the-Loop Boundary: This Pull Request was automatically opened by the remediation agent. "
+            "A human developer must review the proposed diff and manually approve/merge it.*"
+        )
+        with open("pr_body.md", "w", encoding="utf-8") as f:
+            f.write(pr_body_full)
+
+        print("[Agent] Created 'pr_title.txt' and 'pr_body.md' for PR creation.")
+        print("[Agent] Remediation preparation complete.")
+        return
+
+    # -------------------------------------------------------------------------
+    # Determine finding type for single-file modes (auto / code / image)
+    # -------------------------------------------------------------------------
     finding_type = args.finding_type
     if finding_type == "auto":
         # Check if Trivy results exist with findings, else default to code scan

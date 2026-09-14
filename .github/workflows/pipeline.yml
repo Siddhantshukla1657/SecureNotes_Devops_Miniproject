@@ -143,6 +143,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
+
+      - name: Delete Stale Agent-Fix Branch (if exists)
+        run: |
+          git push origin --delete agent-fix/security-remediation 2>/dev/null || echo "No stale branch to delete."
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -168,7 +173,7 @@ jobs:
           SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY || 'Siddhantshukla1657_SecureNotes_Devops_Miniproject' }}
           SONAR_ORG: ${{ secrets.SONAR_ORG || 'siddhantshukla1657' }}
         run: |
-          python scripts/remediate_agent.py --finding-type auto
+          python scripts/remediate_agent.py --finding-type both
 
       - name: Read PR Metadata
         id: pr_meta
