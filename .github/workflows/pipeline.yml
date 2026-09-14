@@ -180,6 +180,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "${{ steps.pr_meta.outputs.title }}"
+          base: main
           branch: "agent-fix/security-remediation"
           delete-branch: true
           title: "${{ steps.pr_meta.outputs.title }}"
