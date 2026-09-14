@@ -1,7 +1,13 @@
-# REMEDIATION: Hardened minimal base image python:3.12-slim (Nemotron proposed fix)
+# REMEDIATION: Hardened minimal base image python:3.12-slim with OS security patches
 FROM python:3.12-slim
 
 WORKDIR /app
+
+# Apply latest security patches to base OS packages (clears Debian-level CVEs)
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 COPY requirements.txt .
