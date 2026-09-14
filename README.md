@@ -1,81 +1,81 @@
-# 🔒 SecureNotes — DevSecOps Secure CI/CD Pipeline & AI Remediation
+# SecureNotes — DevSecOps Secure CI/CD Pipeline & AI Remediation
 
-**SecureNotes** is a complete, production-grade demonstration of **Shift-Left Security** and **Human-in-the-Loop AI Remediation** built with **Flask**, **Docker**, **SonarCloud**, **Trivy**, **GitHub Actions**, and **NVIDIA NIM (Nemotron)**.
+**SecureNotes** is a complete demonstration of **Shift-Left Security** and **Human-in-the-Loop AI Remediation** built with **Flask**, **Docker**, **SonarCloud**, **Trivy**, **GitHub Actions**, and **NVIDIA NIM (Nemotron)**.
 
-The project demonstrates automated security gates protecting an application lifecycle before any artifacts reach a public registry, coupled with an AI remediation agent that autonomously generates reviewable Pull Requests for flagged vulnerabilities.
-
----
-
-## 📑 Table of Contents
-1. [Architecture & System Flow](#-architecture--system-flow)
-2. [DevSecOps Security Gates & Shift-Left Model](#-devsecops-security-gates--shift-left-model)
-3. [User & Remediation Flowcharts](#-user--remediation-flowcharts)
-4. [Data Model](#-data-model)
-5. [Required API Keys & Environment Variables](#-required-api-keys--environment-variables)
-6. [Local Quickstart & Execution](#-local-quickstart--execution)
-7. [Automated Testing Guide (Pytest)](#-automated-testing-guide-pytest)
-8. [Docker Container Verification](#-docker-container-verification)
-9. [AI Remediation Agent (NVIDIA Nemotron)](#-ai-remediation-agent-nvidia-nemotron)
-10. [Repeatable Demo Profiles & Reset Tooling](#-repeatable-demo-profiles--reset-tooling)
-11. [Step-by-Step Viva / Evaluation Runbook](#-step-by-step-viva--evaluation-runbook)
+The project demonstrates automated security gates protecting an application lifecycle before any container artifacts reach a public registry, combined with an AI remediation agent that autonomously generates reviewable Pull Requests for flagged vulnerabilities.
 
 ---
 
-## 🏗️ Architecture & System Flow
+## Table of Contents
+1. [Architecture & System Flow](#architecture--system-flow)
+2. [DevSecOps Security Gates & Shift-Left Model](#devsecops-security-gates--shift-left-model)
+3. [User & Remediation Flowcharts](#user--remediation-flowcharts)
+4. [Data Model](#data-model)
+5. [Required API Keys & Environment Variables](#required-api-keys--environment-variables)
+6. [Local Quickstart & Execution](#local-quickstart--execution)
+7. [Automated Testing Guide (Pytest)](#automated-testing-guide-pytest)
+8. [Docker Container Verification](#docker-container-verification)
+9. [AI Remediation Agent (NVIDIA Nemotron)](#ai-remediation-agent-nvidia-nemotron)
+10. [Repeatable Demo Profiles & Reset Tooling](#repeatable-demo-profiles--reset-tooling)
+11. [Step-by-Step Viva / Evaluation Runbook](#step-by-step-viva--evaluation-runbook)
+
+---
+
+## Architecture & System Flow
 
 The CI/CD pipeline enforces a strict multi-layer security barrier: source code must pass static code and secret scanning (SonarCloud) before compute is spent building a container image, and the resulting container image must pass vulnerability scanning (Trivy) before being published to Docker Hub. If any gate fails, the pipeline halts and branches to the NVIDIA Nemotron remediation agent.
 
 ```mermaid
 graph TD
-    Dev["👨‍💻 Developer (git push)"] --> GH["📦 GitHub Repository"]
-    GH --> GA["⚙️ GitHub Actions CI/CD Pipeline"]
+    Dev["Developer [git push]"] --> GH["GitHub Repository"]
+    GH --> GA["GitHub Actions CI/CD Pipeline"]
     
-    subgraph "Stage 1: Code Security"
-        GA --> J1["🔍 Job: code-quality"]
-        J1 --> Tests["🧪 Run Pytest Suite"]
-        Tests --> SC["📡 SonarCloud Static Analysis"]
+    subgraph Stage1 ["Stage 1: Code Security"]
+        GA --> J1["Job: code-quality"]
+        J1 --> Tests["Run Pytest Suite with Coverage"]
+        Tests --> SC["SonarCloud Static Analysis"]
         SC --> QG{"Quality Gate Passed?"}
     end
     
-    subgraph "Stage 2: Container Security"
-        QG -->|Yes| J2["🛡️ Job: build-and-scan"]
-        J2 --> Build["🐳 Docker Build (sample-app:latest)"]
-        Build --> Trivy["🔎 Trivy Vulnerability Scan"]
-        Trivy --> CVECheck{"High/Critical CVEs?"}
+    subgraph Stage2 ["Stage 2: Container Security"]
+        QG -->|Passed| J2["Job: build-and-scan"]
+        J2 --> Build["Docker Build [sample-app:latest]"]
+        Build --> Trivy["Trivy Vulnerability Scan"]
+        Trivy --> CVECheck{"High or Critical CVEs?"}
     end
     
-    subgraph "Stage 3: Registry Delivery"
-        CVECheck -->|Zero Findings| J3["🚀 Job: publish"]
-        J3 --> Login["🔑 Docker Hub Auth"]
-        Login --> Push["📤 Push Image to Docker Hub"]
-        Push --> Registry[("🌐 Docker Hub Registry")]
+    subgraph Stage3 ["Stage 3: Registry Delivery"]
+        CVECheck -->|Zero Findings| J3["Job: publish"]
+        J3 --> Login["Docker Hub Auth"]
+        Login --> Push["Push Image to Docker Hub"]
+        Push --> Registry[("Docker Hub Registry")]
     end
     
-    subgraph "Stage 4: Agentic Remediation"
-        QG -->|No (Secret / Code Smell)| RA["🤖 Job: remediate"]
-        CVECheck -->|Yes (Vulnerable Base)| RA
-        RA --> NIM["🧠 NVIDIA NIM API (Nemotron 70B)"]
-        NIM --> Patch["📝 Generate Scoped Patch & Explanation"]
-        Patch --> PR["📬 Open GitHub Pull Request"]
-        PR --> Review["👤 Developer Review & Approval"]
+    subgraph Stage4 ["Stage 4: Agentic Remediation"]
+        QG -->|Failed Gate| RA["Job: remediate"]
+        CVECheck -->|Vulnerabilities Found| RA
+        RA --> NIM["NVIDIA NIM API [Nemotron 70B]"]
+        NIM --> Patch["Generate Scoped Patch and Explanation"]
+        Patch --> PR["Open GitHub Pull Request"]
+        PR --> Review["Developer Review and Approval"]
         Review -->|Merge PR| GH
     end
 ```
 
 ---
 
-## 🛡️ DevSecOps Security Gates & Shift-Left Model
+## DevSecOps Security Gates & Shift-Left Model
 
 The pipeline implements "Shift-Left" security by catching flaws as early as possible in the lifecycle:
 
 ```mermaid
 flowchart LR
-    A["1. Code Creation"] --> B["2. Static & Secret Gate (SonarCloud)"]
-    B -->|Blocked on Secrets/Smells| Rem1["AI Remediation PR"]
-    B -->|Clean| C["3. Container Build"]
-    C --> D["4. Image CVE Gate (Trivy)"]
-    D -->|Blocked on OS CVEs| Rem2["AI Remediation PR"]
-    D -->|Clean| E["5. Trusted Registry (Docker Hub)"]
+    A["1. Code Creation"] --> B["2. Static & Secret Gate [SonarCloud]"]
+    B -->|Failed| Rem1["AI Remediation PR"]
+    B -->|Passed| C["3. Container Build"]
+    C --> D["4. Image CVE Gate [Trivy]"]
+    D -->|Failed| Rem2["AI Remediation PR"]
+    D -->|Passed| E["5. Trusted Registry [Docker Hub]"]
 ```
 
 ### Security Layers Enforced:
@@ -84,7 +84,7 @@ flowchart LR
    - **Code Smell & Maintainability Analysis**: Flags duplicated validation logic and non-standard constructs.
    - **Quality Gate Gating**: Strictly halts the pipeline if SonarCloud Quality Gate fails.
 2. **Container Layer (Trivy)**:
-   - **OS Package & Dependency CVE Scanning**: Scans container layers for known public CVEs (e.g. vulnerable end-of-life `python:3.8` base images).
+   - **OS Package & Dependency CVE Scanning**: Scans container layers for known public CVEs (e.g. vulnerable base images).
    - **Severity Threshold**: Configured with `exit-code: 1` on `HIGH` or `CRITICAL` findings.
 3. **AI Remediation Boundary (Human-in-the-Loop)**:
    - The NVIDIA Nemotron agent is **strictly non-autonomous** regarding repository merges.
@@ -92,17 +92,17 @@ flowchart LR
 
 ---
 
-## 🔄 User & Remediation Flowcharts
+## User & Remediation Flowcharts
 
 ### 1. Add Note User Flow
 ```mermaid
 flowchart TD
-    Start["User navigates to http://localhost:5000"] --> View["View active notes & form"]
+    Start["User navigates to http://localhost:5000"] --> View["View active notes and form"]
     View --> Input["User types note text and submits form"]
     Input --> Valid{"Is note non-empty?"}
-    Valid -->|No| Reject["Reject input & reload page safely"]
-    Valid -->|Yes| Store["Generate UUID & prepend to in-memory store"]
-    Store --> Render["Re-render notes grid with timestamp & delete button"]
+    Valid -->|No| Reject["Reject input and reload page safely"]
+    Valid -->|Yes| Store["Generate UUID and prepend to in-memory store"]
+    Store --> Render["Re-render notes grid with timestamp and delete action"]
     Reject --> View
     Render --> View
 ```
@@ -110,10 +110,10 @@ flowchart TD
 ### 2. Delete Note User Flow
 ```mermaid
 flowchart TD
-    Start["User views active note card"] --> Click["Click 'Delete' button"]
+    Start["User views active note card"] --> Click["Click Delete button"]
     Click --> Post["POST request sent to /delete/id"]
     Post --> Exists{"Does note id exist in memory?"}
-    Exists -->|Yes| Remove["Remove note from store (slice mutation)"]
+    Exists -->|Yes| Remove["Remove note from store using in-place slice mutation"]
     Exists -->|No| Ignore["Safe no-op redirect"]
     Remove --> Refresh["Re-render updated list"]
     Ignore --> Refresh
@@ -122,46 +122,46 @@ flowchart TD
 ### 3. Agentic Remediation & Human Review Flow
 ```mermaid
 flowchart TD
-    Fail["Pipeline Gate Fails (Code or Image)"] --> Trigger["remediate job launches"]
+    Fail["Pipeline Gate Fails [Code or Image]"] --> Trigger["remediate job launches"]
     Trigger --> Extract["Extract finding from SonarCloud API or Trivy JSON"]
     Extract --> Prompt["Construct scoped prompt with current file content"]
-    Prompt --> NIM["Send to NVIDIA NIM API (llama-3.1-nemotron-70b-instruct)"]
+    Prompt --> NIM["Send to NVIDIA NIM API [llama-3.1-nemotron-70b-instruct]"]
     NIM --> Parse["Parse JSON response: diff + title + explanation"]
     Parse --> Branch["Create branch: agent-fix/security-remediation"]
     Branch --> CreatePR["Open Pull Request via peter-evans/create-pull-request"]
-    CreatePR --> DevReview["👨‍💻 Human Developer reviews diff and explanation"]
-    DevReview --> Decision{"Approve & Merge?"}
+    CreatePR --> DevReview["Developer reviews diff and explanation"]
+    DevReview --> Decision{"Approve and Merge?"}
     Decision -->|Yes| Merge["Merge PR into main"]
-    Decision -->|No| Close["Close PR / manual tweak"]
-    Merge --> NewRun["Fresh CI/CD pipeline triggered on main (Passes!)"]
+    Decision -->|No| Close["Close PR or manual tweak"]
+    Merge --> NewRun["Fresh CI/CD pipeline triggered on main [Passes]"]
 ```
 
 ---
 
-## 🗄️ Data Model
+## Data Model
 
 The application uses an ephemeral in-memory store for the lifecycle of the container:
 
 ```mermaid
 erDiagram
     NOTE {
-        string id PK "Unique identifier (UUID prefix)"
+        string id PK "Unique identifier [UUID prefix]"
         string text "Note content string"
-        string created_at "Formatted timestamp (YYYY-MM-DD HH:MM:SS)"
+        string created_at "Formatted timestamp [YYYY-MM-DD HH:MM:SS]"
     }
 ```
 
 ---
 
-## 🔑 Required API Keys & Environment Variables
+## Required API Keys & Environment Variables
 
-All API keys and configuration parameters are centralized in [.env.example](file:///c:/Users/Siddhant/Documents/GitHub/SecureNotes_Devops_Miniproject/.env.example). 
+All API keys and configuration parameters are centralized in `.env.example`. 
 
 ### Configuration Table:
 
 | Variable / Secret | Where to Obtain | Purpose |
 |---|---|---|
-| `SONAR_TOKEN` | [SonarCloud Security Tokens](https://sonarcloud.io/account/security/) | Static code scan authentication & quality gate check |
+| `SONAR_TOKEN` | [SonarCloud Security Tokens](https://sonarcloud.io/account/security/) | Static code scan authentication and quality gate check |
 | `SONAR_PROJECT_KEY` | SonarCloud Project Overview | Unique project key (`Siddhantshukla1657_SecureNotes_Devops_Miniproject`) |
 | `SONAR_ORG` | SonarCloud Organization Page | Organization key (`siddhantshukla1657`) |
 | `DOCKERHUB_USERNAME` | [Docker Hub](https://hub.docker.com) | Account username for container registry |
@@ -179,10 +179,10 @@ All API keys and configuration parameters are centralized in [.env.example](file
 
 ---
 
-## 🚀 Local Quickstart & Execution
+## Local Quickstart & Execution
 
 ### Option 1: 1-Click Batch File (Windows)
-Double-click **[run.bat](file:///c:/Users/Siddhant/Documents/GitHub/SecureNotes_Devops_Miniproject/run.bat)** or run in Command Prompt:
+Double-click `run.bat` or run in Command Prompt:
 ```cmd
 run.bat
 ```
@@ -219,18 +219,19 @@ Open **[http://localhost:5000](http://localhost:5000)** in your browser.
 
 ---
 
-## 🧪 Automated Testing Guide (Pytest)
+## Automated Testing Guide (Pytest)
 
 The project includes an automated test suite verifying all routes, input validations, and error conditions.
 
-### Run Automated Tests:
+### Run Automated Tests with Coverage:
 ```bash
-pytest tests/ -v
+python -m coverage run -m pytest tests/
+python -m coverage xml -o coverage.xml
 ```
 
 ### Test Coverage Summary:
 - `test_health_check`: Verifies `GET /health` returns `200 OK` and `{"status": "ok", "service": "securenotes"}`.
-- `test_index_page`: Verifies `GET /` correctly renders HTML with the Pico.css header and note list.
+- `test_index_page`: Verifies `GET /` correctly renders HTML with the navigation header and note list.
 - `test_add_note_success`: Verifies `POST /add` creates new notes in memory and redirects to index.
 - `test_add_note_empty_rejected`: Verifies whitespace/empty submissions are rejected without data corruption.
 - `test_delete_note_success`: Verifies `POST /delete/<id>` deletes the note by ID.
@@ -238,7 +239,7 @@ pytest tests/ -v
 
 ---
 
-## 🐳 Docker Container Verification
+## Docker Container Verification
 
 ### Build & Run Container Locally:
 ```bash
@@ -257,7 +258,7 @@ docker stop securenotes-container && docker rm securenotes-container
 
 ---
 
-## 🤖 AI Remediation Agent (NVIDIA Nemotron)
+## AI Remediation Agent (NVIDIA Nemotron)
 
 The remediation agent located at `scripts/remediate_agent.py` can be tested locally in offline mock mode or with live NVIDIA NIM credentials.
 
@@ -275,7 +276,7 @@ python scripts/remediate_agent.py --finding-type image --mock
 
 ---
 
-## 🎯 Repeatable Demo Profiles & Reset Tooling
+## Repeatable Demo Profiles & Reset Tooling
 
 Four pre-configured demo profiles exist under `demo-states/` to enable rapid, repeatable demonstrations during evaluations:
 
@@ -312,10 +313,10 @@ graph LR
 
 ---
 
-## 📋 Step-by-Step Viva / Evaluation Runbook
+## Step-by-Step Viva / Evaluation Runbook
 
 ### Stage 1 — Demonstrate Failing Security Gates
-1. Push the vulnerable baseline:
+1. Restore and push the vulnerable baseline:
    ```powershell
    .\scripts\reset-demo.ps1 -State vulnerable -Push
    ```
@@ -335,7 +336,7 @@ graph LR
 
 ### Stage 4 — Demonstrate Green End-to-End Pipeline & Publishing
 1. Watch the new workflow run on `main`:
-   - `code-quality`: **PASS** (SonarCloud Quality Gate clears).
-   - `build-and-scan`: **PASS** (Trivy scans `python:3.12-slim` with zero high/critical CVEs).
+   - `code-quality`: **PASS** (SonarCloud Quality Gate clears with coverage).
+   - `build-and-scan`: **PASS** (Trivy scans `python:3.12-slim` with 0 high/critical CVEs).
    - `publish`: **PASS** (Image is authenticated, tagged, and published to Docker Hub).
 2. Open Docker Hub and show the newly published image `securenotes:latest`.
