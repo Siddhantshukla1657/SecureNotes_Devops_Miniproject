@@ -25,7 +25,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$stateDir = Join-Path "demo-states" $State
+# Automatically find repository root (whether called from root or from within scripts/)
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path (Join-Path $scriptDir "..\demo-states")) {
+    $repoRoot = (Resolve-Path (Join-Path $scriptDir "..")).Path
+} else {
+    $repoRoot = (Get-Location).Path
+}
+
+$stateDir = Join-Path $repoRoot (Join-Path "demo-states" $State)
+$targetApp = Join-Path $repoRoot "app.py"
+$targetDocker = Join-Path $repoRoot "Dockerfile"
 
 if (-not (Test-Path $stateDir)) {
     Write-Error "State directory '$stateDir' not found."
@@ -35,22 +45,26 @@ if (-not (Test-Path $stateDir)) {
 Write-Host "==> Restoring SecureNotes state to: $State" -ForegroundColor Cyan
 
 # Copy snapshot files
-Copy-Item (Join-Path $stateDir "app.py") -Destination "app.py" -Force
-Copy-Item (Join-Path $stateDir "Dockerfile") -Destination "Dockerfile" -Force
+Copy-Item (Join-Path $stateDir "app.py") -Destination $targetApp -Force
+Copy-Item (Join-Path $stateDir "Dockerfile") -Destination $targetDocker -Force
 
 Write-Host "==> Updated app.py and Dockerfile to match state '$State'." -ForegroundColor Green
 
 if ($Push) {
     Write-Host "==> Committing and pushing state to git..." -ForegroundColor Cyan
-    git add app.py Dockerfile
-    
-    $status = git status --porcelain app.py Dockerfile
-    if (-not $status) {
-        Write-Host "No changes detected. State is already up to date." -ForegroundColor Yellow
-    } else {
-        git commit -m "demo(state): switch demo baseline to '$State'"
-        git push origin main
-        Write-Host "==> Successfully pushed '$State' state to trigger CI/CD pipeline." -ForegroundColor Green
+    Push-Location $repoRoot
+    try {
+        git add app.py Dockerfile
+        $status = git status --porcelain app.py Dockerfile
+        if (-not $status) {
+            Write-Host "No changes detected. State is already up to date on current branch." -ForegroundColor Yellow
+        } else {
+            git commit -m "demo(state): switch demo baseline to '$State'"
+            git push origin main
+            Write-Host "==> Successfully pushed '$State' state to trigger CI/CD pipeline." -ForegroundColor Green
+        }
+    } finally {
+        Pop-Location
     }
 } else {
     Write-Host "==> Local files updated. To push to GitHub and trigger CI/CD, run:" -ForegroundColor Yellow
