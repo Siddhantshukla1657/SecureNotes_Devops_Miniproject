@@ -1,21 +1,28 @@
 <#
 .SYNOPSIS
     SecureNotes Demo Reset Tool (PowerShell)
-    Restores any of the 4 demo states with one command and pushes to main.
 
 .DESCRIPTION
-    Usage: .\scripts\reset-demo.ps1 -State <vulnerable|fixed|agent-secret-only|agent-image-only> [-Push]
+    Restores any of the 4 demo states with one command.
+    Optionally commits and pushes to GitHub to trigger the CI/CD pipeline.
+
+    Usage:
+        .\scripts\reset-demo.ps1 -State <state> [-Push]
 
     States:
-      - vulnerable        : Baseline with hardcoded secret + duplicate logic + python:3.8
-      - fixed             : Clean code + hardened python:3.12-slim base
-      - agent-secret-only : Hardcoded secret on clean base (demo code remediation)
-      - agent-image-only  : Clean code on vulnerable python:3.8 (demo image remediation)
+        vulnerable         Hardcoded secret + python:3.8   (fails SonarCloud + Trivy)
+        fixed              Clean code + python:3.12-slim   (all gates pass)
+        agent-secret-only  Hardcoded secret only           (fails SonarCloud only)
+        agent-image-only   python:3.8 only                 (fails Trivy only)
+
+    Examples:
+        .\scripts\reset-demo.ps1 -State vulnerable -Push
+        .\scripts\reset-demo.ps1 -State fixed
 #>
 
 [CmdletBinding()]
 param(
-    [Parameter(Position=0, Mandatory=$true)]
+    [Parameter(Position = 0, Mandatory = $true)]
     [ValidateSet("vulnerable", "fixed", "agent-secret-only", "agent-image-only")]
     [string]$State,
 
@@ -25,48 +32,69 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Automatically find repository root (whether called from root or from within scripts/)
+# Resolve repo root whether called from root or scripts/ subdirectory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-if (Test-Path (Join-Path $scriptDir "..\demo-states")) {
-    $repoRoot = (Resolve-Path (Join-Path $scriptDir "..")).Path
+$repoRoot = if (Test-Path (Join-Path $scriptDir "..\demo-states")) {
+    (Resolve-Path (Join-Path $scriptDir "..")).Path
 } else {
-    $repoRoot = (Get-Location).Path
+    (Get-Location).Path
 }
 
-$stateDir = Join-Path $repoRoot (Join-Path "demo-states" $State)
-$targetApp = Join-Path $repoRoot "app.py"
-$targetDocker = Join-Path $repoRoot "Dockerfile"
+$stateDir   = Join-Path $repoRoot "demo-states\$State"
+$targetApp  = Join-Path $repoRoot "app.py"
+$targetDock = Join-Path $repoRoot "Dockerfile"
 
 if (-not (Test-Path $stateDir)) {
-    Write-Error "State directory '$stateDir' not found."
+    Write-Error "State directory not found: $stateDir"
     exit 1
 }
 
-Write-Host "==> Restoring SecureNotes state to: $State" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "==> Restoring SecureNotes to state: $State" -ForegroundColor Cyan
 
-# Copy snapshot files
-Copy-Item (Join-Path $stateDir "app.py") -Destination $targetApp -Force
-Copy-Item (Join-Path $stateDir "Dockerfile") -Destination $targetDocker -Force
+# Copy files — only if they exist in the snapshot
+$appSrc  = Join-Path $stateDir "app.py"
+$dockSrc = Join-Path $stateDir "Dockerfile"
 
-Write-Host "==> Updated app.py and Dockerfile to match state '$State'." -ForegroundColor Green
+if (Test-Path $appSrc) {
+    Copy-Item $appSrc -Destination $targetApp -Force
+    Write-Host "[OK]   app.py restored." -ForegroundColor Green
+} else {
+    Write-Host "[SKIP] app.py not in snapshot, keeping current." -ForegroundColor Yellow
+}
+
+if (Test-Path $dockSrc) {
+    Copy-Item $dockSrc -Destination $targetDock -Force
+    Write-Host "[OK]   Dockerfile restored." -ForegroundColor Green
+} else {
+    Write-Host "[SKIP] Dockerfile not in snapshot, keeping current." -ForegroundColor Yellow
+}
 
 if ($Push) {
-    Write-Host "==> Committing and pushing state to git..." -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "==> Checking for changes to commit..." -ForegroundColor Cyan
+
     Push-Location $repoRoot
     try {
-        git add app.py Dockerfile
-        $status = git status --porcelain app.py Dockerfile
-        if (-not $status) {
-            Write-Host "No changes detected. State is already up to date on current branch." -ForegroundColor Yellow
-        } else {
-            git commit -m "demo(state): switch demo baseline to '$State'"
+        # Check for actual diff before committing to avoid empty commits
+        $diff = git diff --name-only app.py Dockerfile 2>&1
+        if ($diff) {
+            git add app.py Dockerfile
+            git commit -m "demo: reset to $State state"
             git push origin main
-            Write-Host "==> Successfully pushed '$State' state to trigger CI/CD pipeline." -ForegroundColor Green
+            Write-Host ""
+            Write-Host "[OK]   Pushed to GitHub. Pipeline will trigger shortly." -ForegroundColor Green
+            Write-Host "[INFO] Watch at: https://github.com/Siddhantshukla1657/SecureNotes_Devops_Miniproject/actions" -ForegroundColor Cyan
+        } else {
+            Write-Host "[INFO] No changes detected — already in '$State' state. Nothing to push." -ForegroundColor Yellow
         }
     } finally {
         Pop-Location
     }
 } else {
-    Write-Host "==> Local files updated. To push to GitHub and trigger CI/CD, run:" -ForegroundColor Yellow
-    Write-Host "    git add app.py Dockerfile; git commit -m `"demo: switch to $State`"; git push origin main"
+    Write-Host ""
+    Write-Host "[INFO] Files updated locally. To push and trigger the pipeline:" -ForegroundColor Yellow
+    Write-Host "       .\scripts\reset-demo.ps1 -State $State -Push"
 }
+
+Write-Host ""
