@@ -79,7 +79,7 @@ jobs:
           docker build -t sample-app:latest .
 
       - name: Run Trivy Image Scan (Structured JSON Artifact)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'sample-app:latest'
           format: 'json'
@@ -96,7 +96,7 @@ jobs:
           retention-days: 7
 
       - name: Run Trivy Quality Gate Enforcement (Exit on Vulnerability)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'sample-app:latest'
           format: 'table'
