@@ -67,8 +67,7 @@ def delete_note(note_id):
     if not validate_note_input(note_id):
         return redirect(url_for("index"))
 
-    global notes_db
-    notes_db = [note for note in notes_db if note["id"] != note_id]
+    notes_db[:] = [note for note in notes_db if note["id"] != note_id]
     return redirect(url_for("index"))
 
 
