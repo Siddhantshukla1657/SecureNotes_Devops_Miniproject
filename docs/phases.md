@@ -1,6 +1,6 @@
 # SecureNotes Secure CI Pipeline — Phases
 
-> **Status:** Draft | **Last updated:** September 14, 2026
+> **Status:** Draft | **Last updated:** September 14, 2026 | **Authors:** Siddhant Shukla & Siddhant Raut
 
 ## Roadmap Summary
 | Phase | Name | Goal | Target duration |

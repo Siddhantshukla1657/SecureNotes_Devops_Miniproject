@@ -1,6 +1,6 @@
 # SecureNotes Secure CI Pipeline — Design Document
 
-> **Status:** Draft | **Last updated:** September 14, 2026
+> **Status:** Draft | **Last updated:** September 14, 2026 | **Authors:** Siddhant Shukla & Siddhant Raut
 
 ## 1. Design Principles
 - **Demo-first clarity:** every screen and state should read clearly on a shared screen or in a screen recording during a viva — no reliance on the presenter narrating what's happening.

@@ -1,6 +1,6 @@
 # SecureNotes Secure CI Pipeline — Product Requirements Document
 
-> **Status:** Draft | **Last updated:** September 14, 2026 | **Owner:** Siddhant Shukla
+> **Status:** Draft | **Last updated:** September 14, 2026 | **Authors / Owners:** Siddhant Shukla & Siddhant Raut
 
 ## 1. Overview
 SecureNotes is a small, UI-driven notes app that exists to demonstrate a layered DevSecOps pipeline. The pipeline scans source code with SonarQube (or SonarCloud) and container images with Trivy before anything is published to Docker Hub, showing "shift-left security" in a way that's visible on screen rather than buried in logs. On top of the scan-and-gate flow, the pipeline includes an automated remediation agent (powered by NVIDIA's Nemotron model via the NIM API) that reads failed scan findings, proposes a fix, and opens a pull request for a human to review — rather than pushing straight to main. It's built for a Lab CA mini-project submission where the pipeline — not the app — is what's being evaluated.
@@ -25,8 +25,8 @@ Teams that containerize and ship applications frequently often have no automated
 | Persona | Description | Primary need |
 |---|---|---|
 | Course evaluator | Grades the Lab CA submission against the syllabus's DevSecOps/shift-left security expectations | A pipeline that visibly fails on real issues, visibly passes after remediation, and shows responsible human-in-the-loop automation |
-| Siddhant (project owner) | Final-year student building and presenting the project | A reproducible, demo-ready pipeline that isn't fragile during a live walkthrough |
-| Developer (reviewer role) | Whoever reviews the agent's proposed PR — played by Siddhant during the demo | A clear, reviewable diff and explanation before approving any automated fix |
+| Siddhant Shukla & Siddhant Raut (project owners) | Final-year students building and presenting the project | A reproducible, demo-ready pipeline that isn't fragile during a live walkthrough |
+| Developer (reviewer role) | Whoever reviews the agent's proposed PR — played during the demo | A clear, reviewable diff and explanation before approving any automated fix |
 
 ## 6. User Stories
 - As a course evaluator, I want to see the pipeline fail at the code-scan stage on a real hardcoded secret, so that I know the gate isn't just theoretical.

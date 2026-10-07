@@ -1,6 +1,6 @@
 # SecureNotes Secure CI Pipeline — Feature List
 
-> **Status:** Draft | **Last updated:** September 14, 2026
+> **Status:** Draft | **Last updated:** September 14, 2026 | **Authors:** Siddhant Shukla & Siddhant Raut
 
 ## Feature Summary
 | # | Feature | Category | Phase | Priority | Status |

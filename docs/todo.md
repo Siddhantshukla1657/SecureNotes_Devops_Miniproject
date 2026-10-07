@@ -1,6 +1,6 @@
 # SecureNotes Secure CI Pipeline — Todo
 
-> **Last updated:** September 14, 2026. Check items off as they're completed; keep this file in sync with actual progress.
+> **Last updated:** September 14, 2026 | **Authors:** Siddhant Shukla & Siddhant Raut. Check items off as they're completed; keep this file in sync with actual progress.
 
 ## Phase 1: App & Vulnerable Baseline
 - [x] Scaffold the Flask app (`app.py`) with `GET /`, `POST /add`, `POST /delete/<id>`, `GET /health`

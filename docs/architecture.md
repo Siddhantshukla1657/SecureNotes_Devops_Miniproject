@@ -1,6 +1,6 @@
 # SecureNotes Secure CI Pipeline — Architecture
 
-> **Status:** Draft | **Last updated:** September 14, 2026
+> **Status:** Draft | **Last updated:** September 14, 2026 | **Authors:** Siddhant Shukla & Siddhant Raut
 
 ## 1. System Overview
 SecureNotes is a single-container Flask application that serves a server-rendered notes UI. It exists as the subject of a larger CI/CD system: a GitHub Actions pipeline that scans the app's source code with SonarCloud, builds it into a Docker image, scans that image with Trivy, and — only if both gates pass — publishes the image to Docker Hub. When either gate fails, a remediation agent (built on Nemotron via the NVIDIA NIM API) reads the failure's findings, proposes a fix, and opens a pull request for a human to review. The agent never commits or merges on its own. The app itself is intentionally simple; the pipeline and its remediation agent are the actual system being evaluated.

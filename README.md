@@ -1,5 +1,8 @@
 # SecureNotes — DevSecOps Secure CI/CD Pipeline & AI Remediation
 
+> **Authors:** Siddhant Shukla & Siddhant Raut  
+> **Project:** SecureNotes DevOps Miniproject
+
 **SecureNotes** is a complete, containerized notes application designed to demonstrate **Shift-Left Security** and **Human-in-the-Loop AI Remediation** built with **Flask**, **Docker**, **SonarCloud**, **Trivy**, **GitHub Actions**, and **NVIDIA NIM (Nemotron)**.
 
 The project demonstrates automated security gates protecting an application lifecycle before any container artifacts reach a public registry, coupled with an AI remediation agent that autonomously extracts scan findings and generates reviewable Pull Requests.
@@ -20,6 +23,7 @@ The project demonstrates automated security gates protecting an application life
 11. [AI Remediation Agent (NVIDIA Nemotron)](#ai-remediation-agent-nvidia-nemotron)
 12. [Repeatable Demo Profiles & Reset Tooling](#repeatable-demo-profiles--reset-tooling)
 13. [Step-by-Step Pipeline Verification Guide](#step-by-step-pipeline-verification-guide)
+14. [Authors & Contributors](#authors--contributors)
 
 ---
 
@@ -358,3 +362,10 @@ A developer inspects the diff and proposed explanation on GitHub's Pull Request 
 
 ### 4. Clean Pipeline & Publishing
 The merged code satisfies SonarCloud Quality Gate rules and Trivy CVE scanning with 0 high/critical vulnerabilities, progressing to the `publish` stage to push the verified container image to Docker Hub.
+
+---
+
+## Authors & Contributors
+
+- **Siddhant Shukla** — Project Lead & DevSecOps Engineer ([@Siddhantshukla1657](https://github.com/Siddhantshukla1657))
+- **Siddhant Raut** — Co-Author & Security Contributor ([@S1MPSID](https://github.com/S1MPSID))
